@@ -1,0 +1,27 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Env & secrets
+.env
+app/.env
+*.env.local
+
+# Qdrant local data (regenerate with seed_knowledge.py)
+app/rag/qdrant_db/
+qdrant_db/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Pytest
+.pytest_cache/
