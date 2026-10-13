@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WellMind AI</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #171717;
+    --border: #262626;
+    --text: #f5f5f5;
+    --muted: #a3a3a3;
+    --accent: #ffffff;
+    --accent-dim: rgba(255,255,255,0.08);
+    --danger: #f87171;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: var(--accent);
+    color: #0a0a0a;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.ghost:hover { background: var(--accent-dim); }
+  button.icon {
+    background: transparent;
+    color: var(--muted);
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+  button.icon:hover { color: var(--text); }
+  button.icon.active { color: var(--accent); }
+  input, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    width: 100%;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--muted);
+  }
+  textarea { resize: none; }
+  a { color: var(--text); text-decoration: underline; }
+  .hidden { display: none !important; }
+
+  /* AUTH */
+  #auth-view {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+  }
+  .auth-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  .auth-sub {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 14px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .form-footer {
+    margin-top: 20px;
+  }
+  .form-footer button { width: 100%; }
+  .form-msg {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    display: none;
+  }
+  .form-msg.show { display: block; }
+  .form-msg.info { background: var(--accent-dim); color: var(--text); }
+  .form-msg.error { background: rgba(248,113,113,0.1); color: var(--danger); }
+
+  /* CHAT */
+  #chat-view {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: 100vh;
+  }
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .side-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+  }
+  .brand-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  .new-chat {
+    margin: 12px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .new-chat:hover { background: var(--accent-dim); }
+  .conv-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px 12px;
+  }
+  .conv-item {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .conv-item:hover { background: var(--accent-dim); color: var(--text); }
+  .conv-item.active { background: var(--accent-dim); color: var(--text); }
+  .user-strip {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .user-strip button { padding: 4px 10px; font-size: 12px; }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+  .msg-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .msg {
+    margin-bottom: 20px;
+  }
+  .msg-role {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .msg-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .msg.user .msg-body {
+    background: transparent;
+    border-color: var(--border);
+  }
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .source-pill {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--muted);
+  }
+  .empty-state {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--muted);
+    text-align: center;
+    padding: 24px;
+  }
+  .empty-state h1 {
+    color: var(--text);
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+  .empty-state p { margin: 0; font-size: 14px; }
+  .typing {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  .composer-wrap {
+    border-top: 1px solid var(--border);
+    padding: 16px 0;
+    background: var(--bg);
+  }
+  .composer {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .composer textarea {
+    flex: 1;
+    min-height: 42px;
+    max-height: 140px;
+  }
+  .composer-hint {
+    max-width: 760px;
+    margin: 8px auto 0;
+    padding: 0 24px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    #chat-view { grid-template-columns: 1fr; }
+    aside { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="auth-view">
+  <div class="auth-card">
+    <h1 class="auth-title"><span class="brand-dot"></span>WellMind AI</h1>
+    <p class="auth-sub">A mental wellness assistant with safe, grounded answers.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="login">Log in</div>
+      <div class="tab" data-tab="signup">Sign up</div>
+    </div>
+
+    <form id="login-form">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required autocomplete="current-password">
+      </div>
+      <div class="form-footer">
+        <button type="submit">Log in</button>
+      </div>
+      <div class="form-msg" id="login-msg"></div>
+    </form>
+
+    <form id="signup-form" class="hidden">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" required>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="form-footer">
+        <button type="submit">Create account</button>
+      </div>
+      <div class="form-msg" id="signup-msg"></div>
+    </form>
+
+    <form id="otp-form" class="hidden">
+      <div class="field">
+        <label>Enter the 6-digit OTP sent to your email</label>
+        <input type="text" name="otp" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric">
+      </div>
+      <div class="form-footer">
+        <button type="submit">Verify</button>
+      </div>
+      <div class="form-msg info show" id="otp-hint">
+        Dev mode: the OTP prints to the server log. Check <code>docker compose logs app</code>.
+      </div>
+      <div class="form-msg" id="otp-msg"></div>
+    </form>
+  </div>
+</div>
+
+<div id="chat-view" class="hidden">
+  <aside>
+    <div class="side-header">
+      <div class="brand"><span class="brand-dot"></span>WellMind AI</div>
+    </div>
+    <div class="new-chat" id="new-chat-btn">+ New chat</div>
+    <div class="conv-list" id="conv-list"></div>
+    <div class="user-strip">
+      <span id="user-email">—</span>
+      <button class="ghost" id="logout-btn">Log out</button>
+    </div>
+  </aside>
+  <main>
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div>
+          <h1>How are you feeling today?</h1>
+          <p>Ask about stress, anxiety, sleep, or wellness practices. Answers are grounded in your knowledge base.</p>
+        </div>
+      </div>
+    </div>
+    <div class="composer-wrap">
+      <form class="composer" id="composer">
+        <textarea id="input" placeholder="Message WellMind AI..." rows="1"></textarea>
+        <button type="submit" id="send-btn">Send</button>
+      </form>
+      <div class="composer-hint">WellMind AI does not diagnose or prescribe. For emergencies, contact local services.</div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = ''; // same-origin
+const state = {
+  token: localStorage.getItem('wm_token') || null,
+  email: localStorage.getItem('wm_email') || null,
+  conversationId: null,
+  conversations: [],
+  messages: [],
+  pendingEmail: null,
+  pendingPassword: null,
+};
+
+const $ = (sel) => document.querySelector(sel);
+const show = (el) => el.classList.remove('hidden');
+const hide = (el) => el.classList.add('hidden');
+
+function msg(el, type, text) {
+  el.className = 'form-msg show ' + type;
+  el.textContent = text;
+}
+function clearMsg(el) { el.className = 'form-msg'; el.textContent = ''; }
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || ('HTTP ' + res.status));
+  return data;
+}
+
+/* ---------- Auth view ---------- */
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    hide($('#login-form')); hide($('#signup-form')); hide($('#otp-form'));
+    if (t.dataset.tab === 'login') show($('#login-form'));
+    else show($('#signup-form'));
+  });
+});
+
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = e.target.email.value.trim();
+  const password = e.target.password.value;
+  clearMsg($('#login-msg'));
+  try {
+    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    state.token = data.access_token;
+    state.email = email;
+    localStorage.setItem('wm_token', state.token);
+    localStorage.setItem('wm_email', state.email);
+    enterChat();
+  } catch (err) {
+    msg($('#login-msg'), 'error', err.message);
+  }
+});
+
+$('#signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = e.target.name.value.trim();
+  const email = e.target.email.value.trim();
+  const password = e.target.password.value;
+  clearMsg($('#signup-msg'));
+  try {
+    await api('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
+    await api('/auth/send-otp', { method: 'POST', body: JSON.stringify({ email }) });
+    state.pendingEmail = email;
+    state.pendingPassword = password;
+    hide($('#signup-form')); hide($('#login-form'));
+    show($('#otp-form'));
+  } catch (err) {
+    msg($('#signup-msg'), 'error', err.message);
+  }
+});
+
+$('#otp-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const otp = e.target.otp.value.trim();
+  clearMsg($('#otp-msg'));
+  try {
+    await api('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email: state.pendingEmail, otp }) });
+    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: state.pendingEmail, password: state.pendingPassword }) });
+    state.token = data.access_token;
+    state.email = state.pendingEmail;
+    localStorage.setItem('wm_token', state.token);
+    localStorage.setItem('wm_email', state.email);
+    enterChat();
+  } catch (err) {
+    msg($('#otp-msg'), 'error', err.message);
+  }
+});
+
+/* ---------- Chat view ---------- */
+
+function enterChat() {
+  hide($('#auth-view'));
+  show($('#chat-view'));
+  $('#user-email').textContent = state.email || '';
+  state.conversationId = null;
+  state.messages = [];
+  renderMessages();
+}
+
+$('#logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('wm_token');
+  localStorage.removeItem('wm_email');
+  state.token = null; state.email = null; state.conversationId = null; state.messages = [];
+  hide($('#chat-view'));
+  show($('#auth-view'));
+});
+
+$('#new-chat-btn').addEventListener('click', () => {
+  state.conversationId = null;
+  state.messages = [];
+  renderMessages();
+  $('#input').focus();
+});
+
+const input = $('#input');
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    $('#composer').requestSubmit();
+  }
+});
+
+$('#composer').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  state.messages.push({ role: 'user', content: question });
+  state.messages.push({ role: 'assistant', content: '', loading: true });
+  renderMessages();
+
+  try {
+    const data = await api('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ question, conversation_id: state.conversationId }),
+    });
+    state.conversationId = data.conversation_id;
+    state.messages.pop();
+    state.messages.push({
+      role: 'assistant',
+      content: data.answer,
+      sources: data.sources || [],
+      messageId: data.message_id,
+    });
+  } catch (err) {
+    state.messages.pop();
+    state.messages.push({ role: 'assistant', content: 'Error: ' + err.message, isError: true });
+  }
+  renderMessages();
+});
+
+function renderMessages() {
+  const container = $('#messages');
+  if (state.messages.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div>
+          <h1>How are you feeling today?</h1>
+          <p>Ask about stress, anxiety, sleep, or wellness practices. Answers are grounded in your knowledge base.</p>
+        </div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = state.messages.map((m, i) => {
+    const roleLabel = m.role === 'user' ? 'You' : 'WellMind';
+    let body;
+    if (m.loading) {
+      body = '<span class="typing"></span> thinking...';
+    } else {
+      body = escapeHtml(m.content);
+    }
+    let meta = '';
+    if (m.role === 'assistant' && !m.loading && !m.isError) {
+      const sources = (m.sources || []).map(s => `<span class="source-pill">${escapeHtml(s)}</span>`).join('');
+      const feedback = m.messageId
+        ? `<button class="icon ${m.feedback==='up'?'active':''}" data-fb="up" data-idx="${i}">👍</button>
+           <button class="icon ${m.feedback==='down'?'active':''}" data-fb="down" data-idx="${i}">👎</button>`
+        : '';
+      if (sources || feedback) meta = `<div class="msg-meta">${sources}${feedback}</div>`;
+    }
+    return `
+      <div class="msg-wrap">
+        <div class="msg ${m.role}">
+          <div class="msg-role">${roleLabel}</div>
+          <div class="msg-body">${body}</div>
+          ${meta}
+        </div>
+      </div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+
+  container.querySelectorAll('button[data-fb]').forEach(btn => {
+    btn.addEventListener('click', () => sendFeedback(parseInt(btn.dataset.idx), btn.dataset.fb));
+  });
+}
+
+async function sendFeedback(idx, rating) {
+  const m = state.messages[idx];
+  if (!m || !m.messageId || m.feedback === rating) return;
+  try {
+    await api('/chat/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ message_id: m.messageId, rating }),
+    });
+    m.feedback = rating;
+    renderMessages();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Boot ---------- */
+
+if (state.token) {
+  enterChat();
+}
+</script>
+
+</body>
+</html>
