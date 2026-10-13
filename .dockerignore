@@ -1,0 +1,34 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+.env
+app/.env
+*.env.local
+
+.git/
+.gitignore
+.github/
+
+.vscode/
+.idea/
+.DS_Store
+
+*.log
+.pytest_cache/
+
+# Qdrant embedded data lives in a mounted volume, not in the image
+app/rag/qdrant_db/
+qdrant_db/
+
+# Uploads live in a mounted volume
+uploads/
+
+# Local dev data; mount or copy explicitly when needed
+data/
+
+README.md
+tests/

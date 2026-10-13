@@ -104,6 +104,39 @@ Three defense layers:
 
 Risky messages are not written to long-term memory.
 
+## Run with Docker
+
+```bash
+# 1. Create .env.docker from the example
+cp .env.docker.example .env.docker
+# edit .env.docker and set OPENAI_API_KEY + JWT_SECRET_KEY
+
+# 2. Build + start all services (app, postgres, redis)
+docker compose up -d --build
+
+# 3. Create tables on first run
+docker compose exec app python -m app.models.create_tables
+
+# 4. Seed knowledge base from data/ (optional)
+docker compose exec app python seed_knowledge.py
+
+# 5. Open http://127.0.0.1:8000/docs
+```
+
+Stop everything: `docker compose down`. Reset data (deletes volumes): `docker compose down -v`.
+
+**Ports (host → container):** app `8000→8000`, postgres `5433→5432`, redis `6380→6379`. Host ports are offset so they don't clash with locally installed Postgres/Redis.
+
+**Volumes (named, persist across restarts):** `postgres_data`, `redis_data`, `qdrant_data` (embedded Qdrant storage), `uploads_data` (admin-uploaded files). `./data` is bind-mounted read-only for the seed script.
+
+**Migrating existing host DB data into the container** (optional):
+```bash
+pg_dump -h localhost -U postgres ai_hr > /tmp/host-dump.sql
+docker compose exec -T postgres psql -U postgres -d wellmind < /tmp/host-dump.sql
+```
+
+**Known limit of this setup:** Qdrant runs embedded inside the app container (one worker). Moving Qdrant to its own container is tracked in [KAM-13](https://linear.app/kenvue325/issue/KAM-13).
+
 ## Evaluation
 
 ```bash

@@ -10,6 +10,7 @@ __pycache__/
 .env
 app/.env
 *.env.local
+.env.docker
 
 # Qdrant local data (regenerate with seed_knowledge.py)
 app/rag/qdrant_db/
