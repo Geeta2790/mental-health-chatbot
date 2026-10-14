@@ -1,12 +1,16 @@
 from pathlib import Path
+
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient, models as qmodels
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 QDRANT_PATH = BASE_DIR / "qdrant_db"
+COLLECTION_NAME = "mental_health_docs"
+EMBEDDING_DIM = 1536
 
 _vector_store = None
 
@@ -15,17 +19,31 @@ def get_vector_store():
 
     global _vector_store
 
-    if _vector_store is None:
+    if _vector_store is not None:
+        return _vector_store
 
-        embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small"
+    QDRANT_PATH.mkdir(parents=True, exist_ok=True)
+
+    client = QdrantClient(path=str(QDRANT_PATH))
+
+    if not client.collection_exists(COLLECTION_NAME):
+        client.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config=qmodels.VectorParams(
+                size=EMBEDDING_DIM,
+                distance=qmodels.Distance.COSINE
+            )
         )
 
-        _vector_store = QdrantVectorStore.from_existing_collection(
-            embedding=embeddings,
-            path=str(QDRANT_PATH),
-            collection_name="mental_health_docs"
-        )
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small"
+    )
+
+    _vector_store = QdrantVectorStore(
+        client=client,
+        collection_name=COLLECTION_NAME,
+        embedding=embeddings
+    )
 
     return _vector_store
 
