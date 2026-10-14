@@ -352,31 +352,94 @@
     margin-left: auto;
   }
   .empty-state {
-    display: grid;
-    place-items: center;
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
     color: var(--muted-strong);
     text-align: center;
-    padding: 24px;
+    padding: 48px 24px 24px;
   }
-  .empty-state .logo {
-    width: 44px; height: 44px;
-    font-size: 20px;
-    margin: 0 auto 20px;
-    border-radius: 11px;
+  .empty-logo {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    margin: 0 auto 24px;
+    display: grid;
+    place-items: center;
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #d9d9d9 100%);
+    box-shadow: 0 0 60px rgba(167, 139, 250, 0.15),
+                0 0 100px rgba(96, 165, 250, 0.1);
   }
   .empty-state h1 {
     color: var(--text);
     margin: 0 0 10px;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 600;
     letter-spacing: -0.02em;
   }
   .empty-state p {
-    margin: 0;
-    font-size: 14px;
-    max-width: 420px;
+    margin: 0 0 36px;
+    font-size: 15px;
+    max-width: 440px;
+    color: var(--muted-strong);
   }
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    max-width: 640px;
+    width: 100%;
+  }
+  .topic-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  }
+  .topic-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, #fff);
+    opacity: 0.9;
+  }
+  .topic-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.18);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4),
+                0 0 40px -10px var(--card-accent, transparent);
+  }
+  .topic-emoji { font-size: 22px; line-height: 1; }
+  .topic-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 10px;
+    letter-spacing: -0.01em;
+  }
+  .topic-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .topic-card.c-stress    { --card-accent: #f59e0b; }
+  .topic-card.c-fitness   { --card-accent: #10b981; }
+  .topic-card.c-happiness { --card-accent: #fbbf24; }
+  .topic-card.c-sad       { --card-accent: #60a5fa; }
+  .topic-card.c-osho      { --card-accent: #a78bfa; }
+  .topic-card.c-life      { --card-accent: #34d399; }
+  .topic-card.c-anxiety   { --card-accent: #f472b6; }
   .typing {
     display: inline-flex;
     gap: 4px;
@@ -787,17 +850,43 @@ $('#composer').addEventListener('submit', async (e) => {
   renderMessages();
 });
 
+const TOPICS = [
+  { cls: 'c-stress',    emoji: '🫨', label: 'Stress',    desc: 'Day-to-day stress tools',       prompt: 'How can I manage stress day to day?' },
+  { cls: 'c-anxiety',   emoji: '😰', label: 'Anxiety',   desc: 'Calm anxious moments',          prompt: 'How can I calm anxiety in the moment?' },
+  { cls: 'c-happiness', emoji: '😊', label: 'Happiness', desc: 'Small daily happiness habits',  prompt: 'What are small daily practices that build happiness?' },
+  { cls: 'c-sad',       emoji: '😔', label: 'Sadness',   desc: 'Working through low feelings',  prompt: "I've been feeling sad lately. What can help?" },
+  { cls: 'c-fitness',   emoji: '💪', label: 'Fitness',   desc: 'Fitness and mental health',     prompt: "What's the link between fitness and mental health?" },
+  { cls: 'c-life',      emoji: '🌱', label: 'Life',      desc: 'Handling setbacks and growth',  prompt: 'How do I handle setbacks in life?' },
+  { cls: 'c-osho',      emoji: '🧘', label: 'Osho',      desc: 'Reflections on inner peace',    prompt: 'What does Osho say about inner peace?' },
+];
+
+function renderEmptyState() {
+  const cards = TOPICS.map(t => `
+    <div class="topic-card ${t.cls}" data-prompt="${escapeHtml(t.prompt)}">
+      <div class="topic-emoji">${t.emoji}</div>
+      <div class="topic-label">${t.label}</div>
+      <div class="topic-desc">${t.desc}</div>
+    </div>`).join('');
+  return `
+    <div class="empty-state">
+      <div class="empty-logo">W</div>
+      <h1>How are you feeling today?</h1>
+      <p>Pick a topic to start, or type your own question. Answers come from your knowledge base.</p>
+      <div class="topic-grid">${cards}</div>
+    </div>`;
+}
+
 function renderMessages() {
   const container = $('#messages');
   if (state.messages.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div>
-          <div class="logo">W</div>
-          <h1>How are you feeling today?</h1>
-          <p>Ask about stress, anxiety, sleep, or wellness practices. Answers are grounded in your knowledge base.</p>
-        </div>
-      </div>`;
+    container.innerHTML = renderEmptyState();
+    container.querySelectorAll('.topic-card').forEach(card => {
+      card.addEventListener('click', () => {
+        input.value = card.dataset.prompt;
+        input.focus();
+        $('#composer').requestSubmit();
+      });
+    });
     return;
   }
   container.innerHTML = state.messages.map((m, i) => {
