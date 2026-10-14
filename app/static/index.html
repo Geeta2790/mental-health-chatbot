@@ -634,11 +634,15 @@ $('#signup-form').addEventListener('submit', async (e) => {
   clearMsg($('#signup-msg'));
   try {
     await api('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
-    await api('/auth/send-otp', { method: 'POST', body: JSON.stringify({ email }) });
+    const otpRes = await api('/auth/send-otp', { method: 'POST', body: JSON.stringify({ email }) });
     state.pendingEmail = email;
     state.pendingPassword = password;
     hide($('#signup-form')); hide($('#login-form'));
     show($('#otp-form'));
+    if (otpRes.dev_otp) {
+      $('#otp-form').querySelector('input[name="otp"]').value = otpRes.dev_otp;
+      msg($('#otp-msg'), 'info', 'Dev mode: OTP auto-filled. Click Verify to continue.');
+    }
   } catch (err) { msg($('#signup-msg'), 'error', err.message); }
 });
 

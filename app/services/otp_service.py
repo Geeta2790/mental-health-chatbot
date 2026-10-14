@@ -1,3 +1,4 @@
+import os
 import random
 from datetime import datetime, timedelta
 
@@ -9,6 +10,9 @@ from app.repositories.otp_repository import (
     create_otp,
     get_latest_valid_otp
 )
+
+
+DEV_MODE = os.getenv("DEV_MODE", "0") == "1"
 
 
 def generate_otp() -> str:
@@ -44,12 +48,14 @@ def send_otp(
         expires_at=expires_at
     )
 
-    # Local development only
     print(f"OTP for {email}: {otp_code}")
 
-    return {
-        "message": "OTP generated successfully."
-    }
+    response = {"message": "OTP generated successfully."}
+
+    if DEV_MODE:
+        response["dev_otp"] = otp_code
+
+    return response
 
 
 def verify_otp(

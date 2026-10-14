@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -24,6 +26,7 @@ class VerifyOTPRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+    dev_otp: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: EmailStr
