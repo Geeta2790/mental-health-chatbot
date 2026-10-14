@@ -8,6 +8,7 @@ from app.agents.nodes import (
     load_memory_node,
     classify_query_node,
     safety_response_node,
+    smalltalk_response_node,
     rewrite_query_node,
     retrieve_node,
     rerank_node,
@@ -38,6 +39,10 @@ def build_chat_graph(db: Session):
     graph.add_node(
         "safety_response",
         safety_response_node(db)
+    )
+    graph.add_node(
+        "smalltalk_response",
+        smalltalk_response_node(db)
     )
     graph.add_node(
         "rewrite_query",
@@ -77,7 +82,8 @@ def build_chat_graph(db: Session):
         route_after_classify,
         {
             "normal": "rewrite_query",
-            "risky": "safety_response"
+            "risky": "safety_response",
+            "smalltalk": "smalltalk_response"
         }
     )
 
@@ -90,5 +96,6 @@ def build_chat_graph(db: Session):
     graph.add_edge("update_memory", END)
 
     graph.add_edge("safety_response", END)
+    graph.add_edge("smalltalk_response", END)
 
     return graph.compile()

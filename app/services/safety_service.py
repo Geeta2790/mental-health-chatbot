@@ -41,6 +41,48 @@ EMERGENCY_KEYWORDS = [
 ]
 
 
+SMALLTALK_EXACT = {
+    "hi", "hello", "hey", "yo", "sup", "hiya",
+    "thanks", "thank you", "ty", "thx",
+    "bye", "goodbye", "see you", "cya",
+    "ok", "okay", "cool", "nice", "great", "awesome",
+    "good morning", "good afternoon", "good evening", "good night",
+    "how are you", "how's it going", "whats up", "what's up",
+    "who are you", "what are you", "what can you do"
+}
+
+
+def is_smalltalk(text: str) -> bool:
+
+    stripped = text.lower().strip().rstrip("!.?,")
+    return stripped in SMALLTALK_EXACT
+
+
+def smalltalk_reply(text: str) -> str:
+
+    stripped = text.lower().strip().rstrip("!.?,")
+
+    if stripped in {"thanks", "thank you", "ty", "thx"}:
+        return "You're welcome. Here whenever you need."
+
+    if stripped in {"bye", "goodbye", "see you", "cya"}:
+        return "Take care."
+
+    if stripped in {"ok", "okay", "cool", "nice", "great", "awesome"}:
+        return "Anything else you'd like to talk about?"
+
+    if stripped in {"how are you", "how's it going", "whats up", "what's up"}:
+        return "I'm here and ready to help. How are you feeling today?"
+
+    if stripped in {"who are you", "what are you", "what can you do"}:
+        return (
+            "I'm WellMind, a mental wellness assistant. "
+            "Ask me about stress, anxiety, sleep, or everyday wellness practices."
+        )
+
+    return "Hi, I'm WellMind. How can I support you today?"
+
+
 def classify_safety(text: str) -> SafetyCategory:
 
     lower_text = text.lower()

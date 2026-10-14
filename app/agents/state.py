@@ -13,6 +13,7 @@ class ChatState(TypedDict, total=False):
     user_memory: str
 
     safety_category: SafetyCategory
+    is_smalltalk: bool
 
     retrieved_documents: List[Any]
     context: str

@@ -24,7 +24,9 @@ from app.services.memory_service import (
 from app.services.safety_service import (
     classify_safety,
     get_safety_response,
-    SafetyCategory
+    SafetyCategory,
+    is_smalltalk,
+    smalltalk_reply
 )
 
 
@@ -111,11 +113,43 @@ def load_memory_node(db: Session):
 def classify_query_node(state: ChatState) -> ChatState:
 
     category = classify_safety(state["question"])
+    smalltalk = is_smalltalk(state["question"])
 
     return {
         **state,
-        "safety_category": category
+        "safety_category": category,
+        "is_smalltalk": smalltalk
     }
+
+
+def smalltalk_response_node(db: Session):
+
+    def node(state: ChatState) -> ChatState:
+
+        answer = smalltalk_reply(state["question"])
+
+        create_message(
+            db=db,
+            conversation_id=state["conversation_id"],
+            role="user",
+            content=state["question"]
+        )
+
+        assistant_message = create_message(
+            db=db,
+            conversation_id=state["conversation_id"],
+            role="assistant",
+            content=answer
+        )
+
+        return {
+            **state,
+            "answer": answer,
+            "validated_answer": answer,
+            "assistant_message_id": assistant_message.id
+        }
+
+    return node
 
 
 def safety_response_node(db: Session):
@@ -278,7 +312,10 @@ def update_memory_node(db: Session):
 
 def route_after_classify(state: ChatState) -> str:
 
-    if state["safety_category"] == SafetyCategory.NORMAL:
-        return "normal"
+    if state["safety_category"] != SafetyCategory.NORMAL:
+        return "risky"
 
-    return "risky"
+    if state.get("is_smalltalk"):
+        return "smalltalk"
+
+    return "normal"
