@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.agents.state import ChatState
 
 from app.rag.retriever import retrieve_documents
-from app.rag.generator import generate_answer
+from app.rag.generator import generate_answer, generate_followup_answer
 
 from app.repositories.conversation_repository import (
     create_conversation,
@@ -91,10 +91,13 @@ def load_memory_node(db: Session):
             limit=6
         )
 
-        chat_history = "\n".join(
-            f"{m.role}: {m.content}"
-            for m in previous_messages
-        )
+        lines = []
+        for m in previous_messages:
+            lines.append(f"{m.role}: {m.content}")
+            if m.role == "assistant" and m.sources:
+                lines.append(f"  (sources: {', '.join(m.sources)})")
+
+        chat_history = "\n".join(lines)
 
         user_memory = build_memory_context(
             db=db,
@@ -224,10 +227,18 @@ def generate_node(state: ChatState) -> ChatState:
 
     if not state.get("retrieved_documents"):
 
-        answer = (
-            "I don't have enough relevant information "
-            "in my knowledge base to answer that."
-        )
+        if state.get("chat_history"):
+            answer = generate_followup_answer(
+                query=state["question"],
+                chat_history=state["chat_history"],
+                user_memory=state.get("user_memory", "")
+            )
+        else:
+            answer = (
+                "I can help with mental wellness topics like stress, "
+                "anxiety, sleep, and daily practices. What would you "
+                "like to talk about?"
+            )
 
         return {
             **state,
