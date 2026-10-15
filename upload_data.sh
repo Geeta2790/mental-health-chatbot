@@ -12,11 +12,23 @@
 
 set -e
 
-if [ -f .env.docker ]; then
-    set -a
-    . .env.docker
-    set +a
-fi
+read_env() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || return 0
+    local line
+    line=$(grep -E "^${key}=" "$file" | tail -1) || true
+    [ -z "$line" ] && return 0
+    local val="${line#${key}=}"
+    val="${val%\"}"
+    val="${val#\"}"
+    val="${val%\'}"
+    val="${val#\'}"
+    printf '%s' "$val"
+}
+
+: ${ADMIN_EMAIL:=$(read_env .env.docker ADMIN_EMAIL)}
+: ${ADMIN_PASSWORD:=$(read_env .env.docker ADMIN_PASSWORD)}
+: ${DOMAIN:=$(read_env .env.docker DOMAIN)}
 
 URL="${WELLMIND_URL:-}"
 if [ -z "$URL" ]; then
