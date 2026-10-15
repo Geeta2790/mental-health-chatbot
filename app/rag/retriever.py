@@ -1,3 +1,5 @@
+import threading
+
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -13,6 +15,7 @@ COLLECTION_NAME = "mental_health_docs"
 EMBEDDING_DIM = 1536
 
 _vector_store = None
+_init_lock = threading.Lock()
 
 
 def get_vector_store():
@@ -22,28 +25,40 @@ def get_vector_store():
     if _vector_store is not None:
         return _vector_store
 
-    QDRANT_PATH.mkdir(parents=True, exist_ok=True)
+    with _init_lock:
 
-    client = QdrantClient(path=str(QDRANT_PATH))
+        if _vector_store is not None:
+            return _vector_store
 
-    if not client.collection_exists(COLLECTION_NAME):
-        client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=qmodels.VectorParams(
-                size=EMBEDDING_DIM,
-                distance=qmodels.Distance.COSINE
+        QDRANT_PATH.mkdir(parents=True, exist_ok=True)
+
+        client = QdrantClient(path=str(QDRANT_PATH))
+
+        try:
+            if not client.collection_exists(COLLECTION_NAME):
+                client.create_collection(
+                    collection_name=COLLECTION_NAME,
+                    vectors_config=qmodels.VectorParams(
+                        size=EMBEDDING_DIM,
+                        distance=qmodels.Distance.COSINE
+                    )
+                )
+
+            embeddings = OpenAIEmbeddings(
+                model="text-embedding-3-small"
             )
-        )
 
-    embeddings = OpenAIEmbeddings(
-        model="text-embedding-3-small"
-    )
-
-    _vector_store = QdrantVectorStore(
-        client=client,
-        collection_name=COLLECTION_NAME,
-        embedding=embeddings
-    )
+            _vector_store = QdrantVectorStore(
+                client=client,
+                collection_name=COLLECTION_NAME,
+                embedding=embeddings
+            )
+        except Exception:
+            try:
+                client.close()
+            except Exception:
+                pass
+            raise
 
     return _vector_store
 
