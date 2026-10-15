@@ -104,6 +104,35 @@ Three defense layers:
 
 Risky messages are not written to long-term memory.
 
+## Production deploy on EC2 with free domain + HTTPS
+
+```bash
+# ON AWS CONSOLE
+# 1. Allocate an Elastic IP, associate with the EC2 instance.
+#    (So the IP never changes between reboots.)
+# 2. Security Group inbound rules: allow TCP 80 and TCP 443 from 0.0.0.0/0.
+
+# ON DUCKDNS (free)
+# 3. https://www.duckdns.org -> log in with GitHub/Google
+#    Create a subdomain, e.g. "wellmind-demo"
+#    Point it at your Elastic IP -> yourname.duckdns.org
+
+# ON THE EC2 INSTANCE
+cd ~/mental-health-chatbot
+git pull origin development
+echo "DOMAIN=wellmind-demo.duckdns.org" >> .env.docker   # <-- your actual subdomain
+docker compose --profile production up -d --build
+
+# Caddy auto-requests a Let's Encrypt cert on first HTTPS request.
+# Give it ~30 seconds, then open:
+# https://wellmind-demo.duckdns.org
+```
+
+Then share the HTTPS URL. Clean, secure, no port number, no browser warnings.
+
+**To stop:** `docker compose --profile production down`
+**For local dev** (no Caddy, no HTTPS): just `docker compose up -d` as before.
+
 ## Run with Docker
 
 ```bash
