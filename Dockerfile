@@ -16,6 +16,7 @@ RUN pip install -r requirements.txt
 
 COPY app/ ./app/
 COPY seed_knowledge.py ./
+COPY seed_user.py ./
 
 RUN mkdir -p /app/uploads /app/data /app/app/rag/qdrant_db
 

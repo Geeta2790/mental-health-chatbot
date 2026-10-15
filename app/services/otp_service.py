@@ -13,6 +13,7 @@ from app.repositories.otp_repository import (
 
 
 DEV_MODE = os.getenv("DEV_MODE", "0") == "1"
+SIGNUP_ENABLED = os.getenv("SIGNUP_ENABLED", "false").lower() == "true"
 
 
 def generate_otp() -> str:
@@ -23,6 +24,12 @@ def send_otp(
     db: Session,
     email: str
 ):
+
+    if not SIGNUP_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="Signup is disabled on this deployment."
+        )
 
     user = get_user_by_email(
         db=db,
@@ -63,6 +70,12 @@ def verify_otp(
     email: str,
     otp_code: str
 ):
+
+    if not SIGNUP_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="Signup is disabled on this deployment."
+        )
 
     user = get_user_by_email(
         db=db,

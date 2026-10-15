@@ -1,3 +1,5 @@
+import os
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -17,12 +19,21 @@ from app.utils.password import (
 from app.utils.jwt import create_access_token
 
 
+SIGNUP_ENABLED = os.getenv("SIGNUP_ENABLED", "false").lower() == "true"
+
+
 def signup_user(
     db: Session,
     name: str,
     email: str,
     password: str
 ):
+
+    if not SIGNUP_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="Signup is disabled on this deployment."
+        )
 
     existing_user = get_user_by_email(
         db=db,

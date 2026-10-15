@@ -724,11 +724,6 @@
     </div>
     <p class="auth-sub">A mental wellness assistant with safe, grounded answers from your knowledge base.</p>
 
-    <div class="tabs">
-      <div class="tab active" data-tab="login">Log in</div>
-      <div class="tab" data-tab="signup">Sign up</div>
-    </div>
-
     <form id="login-form">
       <div class="field">
         <label>Email</label>
@@ -742,25 +737,9 @@
       <div class="form-msg" id="login-msg"></div>
     </form>
 
-    <form id="signup-form" class="hidden">
-      <div class="field"><label>Name</label><input type="text" name="name" required></div>
-      <div class="field"><label>Email</label><input type="email" name="email" required autocomplete="email"></div>
-      <div class="field"><label>Password</label><input type="password" name="password" required minlength="6" autocomplete="new-password"></div>
-      <div class="form-footer"><button type="submit">Create account</button></div>
-      <div class="form-msg" id="signup-msg"></div>
-    </form>
-
-    <form id="otp-form" class="hidden">
-      <div class="field">
-        <label>Enter the 6-digit OTP sent to your email</label>
-        <input type="text" name="otp" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric">
-      </div>
-      <div class="form-footer"><button type="submit">Verify</button></div>
-      <div class="form-msg info show">
-        Dev mode: OTP prints to the server log. Run <code>docker compose logs app</code> on the server.
-      </div>
-      <div class="form-msg" id="otp-msg"></div>
-    </form>
+    <p style="margin-top:16px;font-size:12px;color:var(--muted);text-align:center">
+      Access is restricted. Signup is disabled on this deployment.
+    </p>
   </div>
 </div>
 
@@ -870,16 +849,6 @@ async function api(path, opts = {}) {
 }
 
 /* AUTH */
-document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    hide($('#login-form')); hide($('#signup-form')); hide($('#otp-form'));
-    if (t.dataset.tab === 'login') show($('#login-form'));
-    else show($('#signup-form'));
-  });
-});
-
 $('#login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = e.target.email.value.trim();
@@ -892,39 +861,6 @@ $('#login-form').addEventListener('submit', async (e) => {
     localStorage.setItem('wm_email', state.email);
     enterChat();
   } catch (err) { msg($('#login-msg'), 'error', err.message); }
-});
-
-$('#signup-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = e.target.name.value.trim();
-  const email = e.target.email.value.trim();
-  const password = e.target.password.value;
-  clearMsg($('#signup-msg'));
-  try {
-    await api('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
-    const otpRes = await api('/auth/send-otp', { method: 'POST', body: JSON.stringify({ email }) });
-    state.pendingEmail = email; state.pendingPassword = password;
-    hide($('#signup-form')); hide($('#login-form'));
-    show($('#otp-form'));
-    if (otpRes.dev_otp) {
-      $('#otp-form').querySelector('input[name="otp"]').value = otpRes.dev_otp;
-      msg($('#otp-msg'), 'info', 'Dev mode: OTP auto-filled. Click Verify to continue.');
-    }
-  } catch (err) { msg($('#signup-msg'), 'error', err.message); }
-});
-
-$('#otp-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const otp = e.target.otp.value.trim();
-  clearMsg($('#otp-msg'));
-  try {
-    await api('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email: state.pendingEmail, otp }) });
-    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: state.pendingEmail, password: state.pendingPassword }) });
-    state.token = data.access_token; state.email = state.pendingEmail;
-    localStorage.setItem('wm_token', state.token);
-    localStorage.setItem('wm_email', state.email);
-    enterChat();
-  } catch (err) { msg($('#otp-msg'), 'error', err.message); }
 });
 
 /* CHAT */
